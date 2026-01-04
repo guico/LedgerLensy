@@ -81,4 +81,6 @@ This project provides off-ledger metadata such as address labels sourced from th
 
 ---
 
-Copyright (c) 2026 GuiCo. Built with ❤️ and AI assistance for the XRP Community.
+Copyright (c) 2026 GuiCo. 
+
+Built with ❤️ and AI assistance for the XRP Community.
