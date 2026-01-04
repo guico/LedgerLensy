@@ -1,0 +1,11 @@
+LedgerLensy
+
+XRPL transaction visualization and labeling tools.
+
+Copyright (c) 2026 GuiCo
+
+This project provides off-ledger metadata such as address labels
+sourced from third-party services (e.g., blockchain explorers).
+Labels are informational only and may be inaccurate or outdated.
+
+LedgerLensy is not affiliated with Ripple, XRPL Labs, or any exchange.
