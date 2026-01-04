@@ -1,0 +1,5 @@
+{
+  "name": "LedgerLensy",
+  "description": "An elegant web application to view XRP account balances and transaction history in a clear, bookkeeping-style format. Enter an XRP address to see detailed credit and debit entries, along with the total balance in both XRP and USD.",
+  "requestFramePermissions": []
+}

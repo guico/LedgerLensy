@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Global pointer cursor for all interactive elements */
+button,
+a,
+[role="button"],
+summary,
+input[type="submit"],
+input[type="button"],
+.cursor-pointer,
+[onclick] {
+    cursor: pointer !important;
+}
+
+button:disabled,
+button[disabled] {
+    cursor: not-allowed !important;
+}
