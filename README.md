@@ -10,7 +10,7 @@
 
 ## What is LedgerLensy?
 
-LedgerLensy is a web application designed for clarity and precision in viewing XRP Ledger (XRPL) transactions. Unlike traditional explorers that can be cluttered and technical, LedgerLensy presents account activity in a familiar bookkeeping format with clear **debit and credit entries**, making it ideal for both casual users and professionals who need to reconcile transactions.
+LedgerLensy is a web application designed for clarity and precision in viewing XRP Ledger (XRPL) transactions. Unlike traditional explorers that can be cluttered and technical, LedgerLensy presents account activity in a familiar bookkeeping format where you can track funds and have clear **debit and credit entries**, making it ideal for both casual users and professionals who need to reconcile transactions.
 
 ## Key Features
 
