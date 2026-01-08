@@ -8,6 +8,7 @@ import { getPrices } from './services/cryptoPriceService';
 import type { AccountInfo, ProcessedTransaction, Prices, TracePath } from './types';
 import { AppLogo } from './components/AppLogo';
 import { RawDataModal } from './components/RawDataModal';
+import { BalanceChangesModal } from './components/BalanceChangesModal';
 import { TraceFundsModal } from './components/TraceFundsModal';
 import { ThemeToggle } from './components/ThemeToggle';
 import { useTranslations } from './hooks/useTranslations';
@@ -135,6 +136,7 @@ const App: React.FC = () => {
   const [marker, setMarker] = useState<object | undefined>();
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [selectedTxRawData, setSelectedTxRawData] = useState<string | null>(null);
+  const [selectedTxForBalanceChanges, setSelectedTxForBalanceChanges] = useState<ProcessedTransaction | null>(null);
   const [filters, setFilters] = useState(initialFilters);
   const [viewMode, setViewMode] = useState<'welcome' | 'account' | 'transaction'>('welcome');
   const [isTraceModalOpen, setIsTraceModalOpen] = useState<boolean>(false);
@@ -250,6 +252,20 @@ const App: React.FC = () => {
     setHasFetched(true);
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const address = params.get('address');
+    const tx = params.get('tx');
+
+    if (address && xrpl.isValidAddress(address)) {
+      setInput(address);
+      fetchForAddress(address);
+    } else if (tx && /^[A-F0-9]{64}$/i.test(tx)) {
+      setInput(tx);
+      fetchForTransaction(tx);
+    }
+  }, []);
+
   const handleReset = useCallback(() => {
     setViewMode('welcome');
     setAccountInfo(null);
@@ -299,12 +315,14 @@ const App: React.FC = () => {
 
   const fetchForTransaction = useCallback(async (hash: string) => {
     setLoading(true);
+    setInput(hash);
     resetState();
     setViewMode('transaction');
 
     try {
       const tx = await getTransactionDetails(hash);
       setTransactions([tx]);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
       if (err instanceof Error) {
@@ -398,6 +416,14 @@ const App: React.FC = () => {
     setTraceError(null);
     try {
       const nextStep = await getTraceStep(furthestStep.nextFundingTxId, prices);
+
+      // Cycle detection: if this transaction or address is already in the path, stop.
+      const isAlreadyInPath = tracePath.some(step => step.txId === nextStep.txId);
+      if (isAlreadyInPath) {
+        setTraceError(t('error_traceCycle'));
+        return;
+      }
+
       setTracePath(prev => prev ? [nextStep, ...prev] : [nextStep]);
     } catch (err) {
       console.error("Tracing error:", err);
@@ -475,11 +501,13 @@ const App: React.FC = () => {
                   onFilterChange={handleFilterChange}
                   onClearFilters={handleClearFilters}
                   onAddressClick={handleAddressClick}
+                  onTransactionClick={fetchForTransaction}
                   marker={marker}
                   onShowMore={handleShowMore}
                   loadingMore={loadingMore}
                   onShowRawData={setSelectedTxRawData}
                   onTraceFunds={handleTraceFunds}
+                  onShowBalanceChanges={setSelectedTxForBalanceChanges}
                   t={t}
                 />
               )}
@@ -524,6 +552,15 @@ const App: React.FC = () => {
       </div>
       {selectedTxRawData && (
         <RawDataModal rawData={selectedTxRawData} onClose={() => setSelectedTxRawData(null)} t={t} />
+      )}
+      {selectedTxForBalanceChanges && (
+        <BalanceChangesModal
+          balanceChanges={selectedTxForBalanceChanges.allBalanceChanges}
+          onClose={() => setSelectedTxForBalanceChanges(null)}
+          onAddressClick={handleAddressClick}
+          currentAccount={accountInfo?.address}
+          t={t}
+        />
       )}
       {isTraceModalOpen && (
         <TraceFundsModal

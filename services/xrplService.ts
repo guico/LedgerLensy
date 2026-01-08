@@ -1,4 +1,4 @@
-import type { AccountInfo, ProcessedTransaction, Balance, BalanceChange, TracePathItem, TracePath, Prices } from '../types';
+import type { AccountInfo, ProcessedTransaction, Balance, BalanceChange, DetailedBalanceChange, TracePathItem, TracePath, Prices } from '../types';
 import { knownAddressesCache } from './knownAddresses';
 
 // xrpl is loaded from CDN in index.html, declare it here for TypeScript
@@ -164,6 +164,83 @@ const getBalanceChanges = (meta: any, address: string): BalanceChange[] => {
     return changes;
 }
 
+const getAllDetailedBalanceChanges = (meta: any): DetailedBalanceChange[] => {
+    const changes: DetailedBalanceChange[] = [];
+    if (!meta || !meta.AffectedNodes) {
+        return changes;
+    }
+
+    for (const affectedNode of meta.AffectedNodes) {
+        const node = affectedNode.ModifiedNode || affectedNode.CreatedNode || affectedNode.DeletedNode;
+        if (!node || !node.LedgerEntryType) continue;
+
+        const finalFields = node.FinalFields || node.NewFields;
+        const prevFields = node.PreviousFields;
+
+        if (node.LedgerEntryType === 'AccountRoot') {
+            const account = finalFields?.Account || prevFields?.Account;
+            if (!account) continue;
+
+            let oldBalance = 0n;
+            let newBalance = 0n;
+
+            if (affectedNode.ModifiedNode) {
+                oldBalance = BigInt(prevFields?.Balance || finalFields.Balance);
+                newBalance = BigInt(finalFields.Balance);
+            } else if (affectedNode.CreatedNode) {
+                oldBalance = 0n;
+                newBalance = BigInt(finalFields.Balance);
+            } else if (affectedNode.DeletedNode) {
+                oldBalance = BigInt(finalFields.Balance);
+                newBalance = 0n;
+            }
+
+            const change = newBalance - oldBalance;
+            if (change !== 0n) {
+                changes.push({
+                    account,
+                    currency: 'XRP',
+                    value: (Number(change) / DROPS_PER_XRP).toString(),
+                });
+            }
+        } else if (node.LedgerEntryType === 'RippleState' && finalFields) {
+            const currency = convertHexCurrencyToString(finalFields.Balance.currency);
+            let oldBalanceVal = 0;
+            let newBalanceVal = 0;
+
+            if (affectedNode.ModifiedNode) {
+                oldBalanceVal = parseFloat(prevFields?.Balance?.value || finalFields.Balance.value);
+                newBalanceVal = parseFloat(finalFields.Balance.value);
+            } else if (affectedNode.CreatedNode) {
+                oldBalanceVal = 0;
+                newBalanceVal = parseFloat(finalFields.Balance.value);
+            } else if (affectedNode.DeletedNode) {
+                oldBalanceVal = parseFloat(finalFields.Balance.value);
+                newBalanceVal = 0;
+            }
+
+            const changeVal = newBalanceVal - oldBalanceVal;
+            if (changeVal !== 0) {
+                // Low party's balance change is the changeVal
+                changes.push({
+                    account: finalFields.LowLimit.issuer,
+                    currency,
+                    value: changeVal.toString(),
+                    issuer: finalFields.HighLimit.issuer,
+                });
+                // High party's balance change is the inverse of changeVal
+                changes.push({
+                    account: finalFields.HighLimit.issuer,
+                    currency,
+                    value: (-changeVal).toString(),
+                    issuer: finalFields.LowLimit.issuer,
+                });
+            }
+        }
+    }
+    return changes;
+}
+
 /**
  * Processes a raw transaction item into a ProcessedTransaction object.
  * This is a shared helper function for both account and single transaction lookups.
@@ -177,6 +254,7 @@ const processTxItem = (item: any, perspectiveAddress: string): ProcessedTransact
     const fee = tx.Fee ? (Number(tx.Fee) / DROPS_PER_XRP).toString() : '0';
 
     const balanceChanges = getBalanceChanges(meta, perspectiveAddress);
+    const allBalanceChanges = getAllDetailedBalanceChanges(meta);
 
     // Ensure there's a balance change or a fee to justify showing the transaction
     if (balanceChanges.length === 0) {
@@ -264,6 +342,7 @@ const processTxItem = (item: any, perspectiveAddress: string): ProcessedTransact
         detailsParams,
         fee,
         balanceChanges,
+        allBalanceChanges,
         result: meta.TransactionResult,
         rawData: JSON.stringify(item, null, 2),
     };
@@ -384,7 +463,8 @@ export const getTraceStep = async (txId: string, prices: Prices | null): Promise
         (historyTx: any) =>
             historyTx.validated &&
             historyTx.tx?.TransactionType === 'Payment' &&
-            historyTx.tx?.Destination === sender // Find an incoming payment
+            historyTx.tx?.Destination === sender &&
+            historyTx.tx?.Account !== sender // Exclude self-payments to avoid loops
     );
 
     return {

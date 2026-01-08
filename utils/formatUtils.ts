@@ -10,7 +10,16 @@ export const smartFormatNumber = (value: number): string => {
         return '0.00';
     }
 
+    if (isNaN(value) || !isFinite(value)) {
+        return value.toString();
+    }
+
     const absValue = Math.abs(value);
+
+    // Use scientific notation for extremely large numbers to avoid long strings of zeros
+    if (absValue >= 1e15) {
+        return value.toExponential(2);
+    }
 
     // For values >= 0.01, format to 2 decimal places with grouping (commas).
     if (absValue >= 0.01) {
@@ -28,7 +37,12 @@ export const smartFormatNumber = (value: number): string => {
     const firstNonZeroIndex = Array.from(decimalPart).findIndex(d => d !== '0');
 
     if (firstNonZeroIndex === -1) {
-        return '0.00'; // Should be covered by the value === 0 check, but as a fallback.
+        return '0.00';
+    }
+
+    // If the number is extremely small beyond reasonable precision, use scientific notation
+    if (firstNonZeroIndex > 8) {
+        return value.toExponential(2);
     }
 
     // Determine the number of decimal places to show. We want to show the first 
@@ -47,9 +61,9 @@ export const smartFormatNumber = (value: number): string => {
  * @returns A full-precision string of the number, without grouping (commas).
  */
 export const getFullNumberString = (value: number | string): string => {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  // Using toLocaleString with high precision and no grouping is a reliable way to format.
-  return num.toLocaleString('en-US', { maximumFractionDigits: 20, useGrouping: false });
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    // Using toLocaleString with high precision and no grouping is a reliable way to format.
+    return num.toLocaleString('en-US', { maximumFractionDigits: 20, useGrouping: false });
 };
 
 /**
@@ -59,7 +73,7 @@ export const getFullNumberString = (value: number | string): string => {
  */
 export const formatUSD = (value: number): string => {
     return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+        style: 'currency',
+        currency: 'USD',
     }).format(value);
 };

@@ -36,6 +36,12 @@ const DownloadIcon: React.FC<{ className: string }> = ({ className }) => (
   </svg>
 );
 
+const CurrencyDollarIcon: React.FC<{ className: string }> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+);
+
 const XCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
@@ -99,14 +105,25 @@ const DetailRenderer: React.FC<{ onAddressClick: (address: string) => void, t: (
       {parts.map((part, index) => {
         if (addressRegex.test(part)) {
           return (
-            <button
+            <a
               key={index}
-              onClick={() => onAddressClick(part)}
+              href={`?address=${part}`}
+              onClick={(e) => {
+                if (!e.metaKey && !e.ctrlKey && e.button !== 1) {
+                  e.preventDefault();
+                  onAddressClick(part);
+                }
+              }}
+              onAuxClick={(e) => {
+                if (e.button === 1) {
+                  // Browser will handle middle click on <a> naturally
+                }
+              }}
               className="text-xrp-blue hover:underline focus:outline-none focus:underline"
               title={t('viewAccountDetails', { address: part })}
             >
               {part}
-            </button>
+            </a>
           );
         }
         return <span key={index}>{part}</span>;
@@ -142,6 +159,8 @@ interface TransactionsTableProps {
   loadingMore: boolean;
   onShowRawData: (rawData: string) => void;
   onTraceFunds: (txId: string) => void;
+  onShowBalanceChanges: (tx: ProcessedTransaction) => void;
+  onTransactionClick: (hash: string) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -237,6 +256,8 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
   loadingMore,
   onShowRawData,
   onTraceFunds,
+  onShowBalanceChanges,
+  onTransactionClick,
   t
 }) => {
   const [isMobileFiltersVisible, setIsMobileFiltersVisible] = useState(false);
@@ -294,7 +315,11 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
             </button>
           )}
           {transactions.length > 0 && (
-            <button onClick={handleExport} className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-xrp-blue transition-colors">
+            <button
+              onClick={handleExport}
+              title={t('exportTooltip')}
+              className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-800 focus:ring-xrp-blue transition-colors"
+            >
               <DownloadIcon className="w-4 h-4" />
               {t('export')}
             </button>
@@ -375,7 +400,24 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
               return (
                 <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors duration-150">
                   <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-500 dark:text-gray-400 sm:pl-6" title={tx.date}>{displayDate}</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm"><TransactionTypeDisplay type={tx.type} t={t} /></td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <div className="flex flex-col">
+                      <TransactionTypeDisplay type={tx.type} t={t} />
+                      <a
+                        href={`?tx=${tx.id}`}
+                        onClick={(e) => {
+                          if (!e.metaKey && !e.ctrlKey && e.button !== 1) {
+                            e.preventDefault();
+                            onTransactionClick(tx.id);
+                          }
+                        }}
+                        className="text-[10px] font-mono text-gray-400 dark:text-gray-500 hover:text-xrp-blue mt-1 hover:underline truncate w-16"
+                        title={tx.id}
+                      >
+                        {tx.id.substring(0, 8)}...
+                      </a>
+                    </div>
+                  </td>
                   <td className="px-3 py-4 text-sm text-gray-800 dark:text-gray-300 max-w-md"><div className="flex items-center">{!isDebitTx ? <ArrowDownLeftIcon className="h-4 w-4 mr-2 text-green-500 dark:text-green-400 flex-shrink-0" /> : <ArrowUpRightIcon className="h-4 w-4 mr-2 text-red-500 dark:text-red-400 flex-shrink-0" />}<span className="font-mono" title={t(tx.detailsKey, tx.detailsParams)}><DetailRenderer tx={tx} onAddressClick={onAddressClick} t={t} /></span></div></td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-green-600 dark:text-green-400">{credits.map((change, index) => {
                     const val = parseFloat(change.value);
@@ -403,6 +445,11 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                           <TraceIcon className="h-5 w-5" />
                         </button>
                       )}
+                      {tx.allBalanceChanges && tx.allBalanceChanges.length > 1 && (
+                        <button onClick={() => onShowBalanceChanges(tx)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('viewBalanceChanges')}>
+                          <CurrencyDollarIcon className="h-5 w-5" />
+                        </button>
+                      )}
                       <button onClick={() => onShowRawData(tx.rawData)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('viewRawData')}>
                         <CodeBracketIcon className="h-5 w-5" />
                       </button>
@@ -428,13 +475,26 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
 
             return (
               <div key={tx.id} className="bg-gray-50 dark:bg-gray-800/60 p-4 rounded-lg border border-gray-200 dark:border-gray-700/50 shadow-sm">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col">
                     <TransactionTypeDisplay type={tx.type} t={t} />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{displayDate}</p>
+                    <a
+                      href={`?tx=${tx.id}`}
+                      onClick={(e) => {
+                        if (!e.metaKey && !e.ctrlKey && e.button !== 1) {
+                          e.preventDefault();
+                          onTransactionClick(tx.id);
+                        }
+                      }}
+                      className="text-[10px] font-mono text-gray-400 dark:text-gray-500 hover:text-xrp-blue mt-1 hover:underline w-16"
+                      title={tx.id}
+                    >
+                      {tx.id.substring(0, 8)}...
+                    </a>
                   </div>
-                  {tx.result === 'tesSUCCESS' ? <span className="inline-flex items-center rounded-md bg-green-100 text-green-800 dark:bg-green-900/70 px-2 py-1 text-xs font-medium dark:text-green-300">{t('success')}</span> : <span className="inline-flex items-center rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-900/70 px-2 py-1 text-xs font-medium dark:text-yellow-300" title={tx.result}>{t('failed')}</span>}
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{displayDate}</span>
                 </div>
+                {tx.result === 'tesSUCCESS' ? <span className="inline-flex items-center rounded-md bg-green-100 text-green-800 dark:bg-green-900/70 px-2 py-1 text-xs font-medium dark:text-green-300">{t('success')}</span> : <span className="inline-flex items-center rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-900/70 px-2 py-1 text-xs font-medium dark:text-yellow-300" title={tx.result}>{t('failed')}</span>}
                 <div className="mb-4">
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('details')}</p>
                   <div className="flex items-center text-sm text-gray-800 dark:text-gray-300">
@@ -484,6 +544,11 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                     {isIncomingPayment && (
                       <button onClick={() => onTraceFunds(tx.id)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('tracePaymentOrigin')}>
                         <TraceIcon className="h-5 w-5" />
+                      </button>
+                    )}
+                    {tx.allBalanceChanges && tx.allBalanceChanges.length > 1 && (
+                      <button onClick={() => onShowBalanceChanges(tx)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('viewBalanceChanges')}>
+                        <CurrencyDollarIcon className="h-5 w-5" />
                       </button>
                     )}
                     <button onClick={() => onShowRawData(tx.rawData)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('viewRawData')}>

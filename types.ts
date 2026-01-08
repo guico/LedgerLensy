@@ -11,6 +11,13 @@ export interface AccountInfo {
 
 export type BalanceChange = Balance;
 
+export interface DetailedBalanceChange {
+  account: string;
+  currency: string;
+  value: string;
+  issuer?: string;
+}
+
 export interface ProcessedTransaction {
   id: string; // hash
   date: string;
@@ -19,7 +26,8 @@ export interface ProcessedTransaction {
   detailsKey: string;
   detailsParams: Record<string, string | number>;
   fee: string;
-  balanceChanges: BalanceChange[];
+  balanceChanges: BalanceChange[]; // Relative to the perspective account
+  allBalanceChanges: DetailedBalanceChange[]; // All accounts affected
   result: string;
   rawData: string;
   xrpPriceAtTx?: number;
