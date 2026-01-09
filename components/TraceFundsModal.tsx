@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import type { Prices, TracePath } from '../types';
 import { smartFormatNumber, formatUSD } from '../utils/formatUtils';
+import { SmartNumber } from './SmartNumber';
 
 interface TraceFundsModalProps {
   isOpen: boolean;
@@ -123,7 +124,7 @@ export const TraceFundsModal: React.FC<TraceFundsModalProps> = ({
                       </button>
                       {step.balance !== undefined && (
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          {t('balance')}: <span className="font-mono">{smartFormatNumber(parseFloat(step.balance))} XRP</span>
+                          {t('balance')}: <span className="font-mono"><SmartNumber value={parseFloat(step.balance)} /> XRP</span>
                           {step.balanceUSD !== undefined && (
                             <span className="font-mono text-green-600 dark:text-green-400"> ({formatUSD(step.balanceUSD)})</span>
                           )}
@@ -132,7 +133,7 @@ export const TraceFundsModal: React.FC<TraceFundsModalProps> = ({
                     </div>
                     <div className="flex items-center my-2 text-gray-500 dark:text-gray-400">
                       <ArrowDownIcon className="w-5 h-5" />
-                      <span className="ml-2 font-mono text-sm">{smartFormatNumber(parseFloat(step.amount))} {step.currency}</span>
+                      <span className="ml-2 font-mono text-sm"><SmartNumber value={parseFloat(step.amount)} /> {step.currency}</span>
                     </div>
                   </li>
                 ))}
@@ -142,7 +143,7 @@ export const TraceFundsModal: React.FC<TraceFundsModalProps> = ({
                     <p className="font-mono text-sm text-green-800 dark:text-green-200 break-all">{finalRecipient}</p>
                     {finalRecipientBalance !== undefined && (
                       <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                        {t('balance')}: <span className="font-mono">{smartFormatNumber(parseFloat(finalRecipientBalance))} XRP</span>
+                        {t('balance')}: <span className="font-mono"><SmartNumber value={parseFloat(finalRecipientBalance)} /> XRP</span>
                         {prices?.['XRP'] && (
                           <span className="font-mono"> ({formatUSD(parseFloat(finalRecipientBalance) * prices['XRP'])})</span>
                         )}

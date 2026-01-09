@@ -23,7 +23,8 @@ export const translations = {
     // Transactions Table
     txDetailsTitle: "Transaction Details",
     txHistoryTitle: "Transaction History",
-    showingTransactions: "Showing {{count}} of {{total}} loaded transactions.",
+    showingTransactions: "{{count}} of {{total}} transactions.",
+    showingAllTransactions: "{{count}} transactions loaded.",
     clear: "Clear",
     export: "Export",
     exportTooltip: "Exports what is currently shown including filters",
@@ -158,7 +159,8 @@ export const translations = {
     // Transactions Table
     txDetailsTitle: "Detalles de Transacción",
     txHistoryTitle: "Historial de Transacciones",
-    showingTransactions: "Mostrando {{count}} de {{total}} transacciones cargadas.",
+    showingTransactions: "{{count}} de {{total}} transacciones.",
+    showingAllTransactions: "{{count}} transacciones cargadas.",
     clear: "Limpiar",
     export: "Exportar",
     exportTooltip: "Exporta lo que se muestra actualmente incluyendo los filtros",

@@ -3,6 +3,7 @@ import type { ProcessedTransaction } from '../types';
 import { exportTransactionsToCSV } from '../utils/exportUtils';
 import { TransactionTypeDisplay } from './TransactionTypeDisplay';
 import { getFullNumberString, smartFormatNumber, formatUSD } from '../utils/formatUtils';
+import { SmartNumber } from './SmartNumber';
 import { knownAddressesCache } from '../services/knownAddresses';
 
 const ArrowUpRightIcon: React.FC<{ className: string }> = ({ className }) => (
@@ -303,7 +304,9 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
           </h2>
           {!isSingleTxView && totalTransactions > 0 && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {t('showingTransactions', { count: transactions.length, total: totalTransactions })}
+              {transactions.length === totalTransactions
+                ? t('showingAllTransactions', { count: transactions.length })
+                : t('showingTransactions', { count: transactions.length, total: totalTransactions })}
             </p>
           )}
         </div>
@@ -342,7 +345,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
 
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table className="min-w-full lg:min-w-[1200px] divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 sm:pl-6">{t('date')}</th>
@@ -353,7 +356,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
               <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('feeXRP')}</th>
               <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('xrpRate')}</th>
               <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{t('status')}</th>
-              <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">{t('actions')}</th>
+              <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6 text-center text-sm font-semibold text-gray-700 dark:text-gray-300 min-w-[120px]">{t('actions')}</th>
             </tr>
             {!isSingleTxView && (
               <tr className="bg-gray-100/50 dark:bg-gray-800/50">
@@ -418,16 +421,16 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                       </a>
                     </div>
                   </td>
-                  <td className="px-3 py-4 text-sm text-gray-800 dark:text-gray-300 max-w-md"><div className="flex items-center">{!isDebitTx ? <ArrowDownLeftIcon className="h-4 w-4 mr-2 text-green-500 dark:text-green-400 flex-shrink-0" /> : <ArrowUpRightIcon className="h-4 w-4 mr-2 text-red-500 dark:text-red-400 flex-shrink-0" />}<span className="font-mono" title={t(tx.detailsKey, tx.detailsParams)}><DetailRenderer tx={tx} onAddressClick={onAddressClick} t={t} /></span></div></td>
+                  <td className="px-3 py-4 text-sm text-gray-800 dark:text-gray-300 max-w-md min-w-[250px]"><div className="flex items-center">{!isDebitTx ? <ArrowDownLeftIcon className="h-4 w-4 mr-2 text-green-500 dark:text-green-400 flex-shrink-0" /> : <ArrowUpRightIcon className="h-4 w-4 mr-2 text-red-500 dark:text-red-400 flex-shrink-0" />}<span className="font-mono" title={t(tx.detailsKey, tx.detailsParams)}><DetailRenderer tx={tx} onAddressClick={onAddressClick} t={t} /></span></div></td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-green-600 dark:text-green-400">{credits.map((change, index) => {
                     const val = parseFloat(change.value);
-                    return (<div key={index}>{change.currency} <span title={`${t('fullValue')}: ${getFullNumberString(val)}`}>{smartFormatNumber(val)}</span></div>)
+                    return (<div key={index}><span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{change.currency}</span><span title={`${t('fullValue')}: ${getFullNumberString(val)}`}><SmartNumber value={val} /></span></div>)
                   })}</td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-red-600 dark:text-red-400">{debits.map((change, index) => {
                     const val = Math.abs(parseFloat(change.value));
-                    return (<div key={index}>{change.currency} <span title={`${t('fullValue')}: ${getFullNumberString(val)}`}>{smartFormatNumber(val)}</span></div>)
+                    return (<div key={index}><span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{change.currency}</span><span title={`${t('fullValue')}: ${getFullNumberString(val)}`}><SmartNumber value={val} /></span></div>)
                   })}</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-gray-500 dark:text-gray-500"><span title={`${t('fullValue')}: ${getFullNumberString(tx.fee)}`}>{smartFormatNumber(parseFloat(tx.fee))}</span></td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-gray-500 dark:text-gray-500"><span title={`${t('fullValue')}: ${getFullNumberString(tx.fee)}`}><SmartNumber value={parseFloat(tx.fee)} /></span></td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-mono text-gray-500 dark:text-gray-400">
                     {tx.xrpPriceAtTx !== undefined && tx.xrpValueUSD !== undefined ? (
                       <span title={`${t('totalValue')}: ${formatUSD(tx.xrpValueUSD)}`}>
@@ -438,7 +441,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                     )}
                   </td>
                   <td className="whitespace-nowrap py-4 pl-3 pr-4 text-center text-sm text-gray-500 dark:text-gray-400">{tx.result === 'tesSUCCESS' ? <span className="inline-flex items-center rounded-md bg-green-100 text-green-800 dark:bg-green-900/70 px-2 py-1 text-xs font-medium dark:text-green-300">{t('success')}</span> : <span className="inline-flex items-center rounded-md bg-yellow-100 text-yellow-800 dark:bg-yellow-900/70 px-2 py-1 text-xs font-medium dark:text-yellow-300" title={tx.result}>{t('failed')}</span>}</td>
-                  <td className="whitespace-nowrap py-4 pl-3 pr-4 text-center text-sm font-medium sm:pr-6">
+                  <td className="whitespace-nowrap py-4 pl-3 pr-4 text-center text-sm font-medium sm:pr-6 min-w-[120px]">
                     <div className="flex items-center justify-center gap-3">
                       {isIncomingPayment && (
                         <button onClick={() => onTraceFunds(tx.id)} className="text-gray-500 dark:text-gray-400 hover:text-xrp-blue transition-colors" title={t('tracePaymentOrigin')}>
@@ -509,7 +512,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                     <div className="font-mono text-green-600 dark:text-green-400">
                       {credits.length > 0 ? credits.map((c, i) => {
                         const val = parseFloat(c.value);
-                        return <div key={i}>{c.currency} <span title={`${t('fullValue')}: ${getFullNumberString(val)}`}>{smartFormatNumber(val)}</span></div>
+                        return <div key={i}><span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{c.currency}</span><span title={`${t('fullValue')}: ${getFullNumberString(val)}`}><SmartNumber value={val} /></span></div>
                       }) : <span className="text-gray-400 dark:text-gray-500">-</span>}
                     </div>
                   </div>
@@ -518,14 +521,14 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                     <div className="font-mono text-red-600 dark:text-red-400">
                       {debits.length > 0 ? debits.map((c, i) => {
                         const val = Math.abs(parseFloat(c.value));
-                        return <div key={i}>{c.currency} <span title={`${t('fullValue')}: ${getFullNumberString(val)}`}>{smartFormatNumber(val)}</span></div>
+                        return <div key={i}><span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{c.currency}</span><span title={`${t('fullValue')}: ${getFullNumberString(val)}`}><SmartNumber value={val} /></span></div>
                       }) : <span className="text-gray-400 dark:text-gray-500">-</span>}
                     </div>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('feeXRP')}</p>
                     <p className="font-mono text-gray-500 dark:text-gray-500">
-                      <span title={`${t('fullValue')}: ${getFullNumberString(tx.fee)}`}>{smartFormatNumber(parseFloat(tx.fee))}</span>
+                      <span title={`${t('fullValue')}: ${getFullNumberString(tx.fee)}`}><SmartNumber value={parseFloat(tx.fee)} /></span>
                     </p>
                   </div>
                   <div>

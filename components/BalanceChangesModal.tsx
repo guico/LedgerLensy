@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import type { DetailedBalanceChange } from '../types';
 import { smartFormatNumber, getFullNumberString } from '../utils/formatUtils';
+import { SmartNumber } from './SmartNumber';
 import { knownAddressesCache } from '../services/knownAddresses';
 
 interface BalanceChangesModalProps {
@@ -116,7 +117,7 @@ export const BalanceChangesModal: React.FC<BalanceChangesModalProps> = ({ balanc
                                                     <div className="flex flex-col gap-1">
                                                         {credits.map((c, i) => (
                                                             <div key={i} title={getFullNumberString(c.value)}>
-                                                                {c.currency} {smartFormatNumber(parseFloat(c.value))}
+                                                                <span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{c.currency}</span> <SmartNumber value={parseFloat(c.value)} />
                                                             </div>
                                                         ))}
                                                     </div>
@@ -127,7 +128,7 @@ export const BalanceChangesModal: React.FC<BalanceChangesModalProps> = ({ balanc
                                                     <div className="flex flex-col gap-1">
                                                         {debits.map((c, i) => (
                                                             <div key={i} title={getFullNumberString(c.value)}>
-                                                                {c.currency} {smartFormatNumber(Math.abs(parseFloat(c.value)))}
+                                                                <span className="text-gray-500 dark:text-gray-300 text-xs mr-1 font-sans font-semibold">{c.currency}</span> <SmartNumber value={Math.abs(parseFloat(c.value))} />
                                                             </div>
                                                         ))}
                                                     </div>

@@ -16,9 +16,27 @@ export const smartFormatNumber = (value: number): string => {
 
     const absValue = Math.abs(value);
 
-    // Use scientific notation for extremely large numbers to avoid long strings of zeros
+    // Use XRP Scan style for extremely large numbers to avoid breaking the UI with long strings of zeros
     if (absValue >= 1e15) {
-        return value.toExponential(2);
+        const expStr = absValue.toExponential(15); // Get 16 significant digits
+        const [mantissa, exponentStr] = expStr.split('e');
+        const exp = parseInt(exponentStr);
+
+        if (exp >= 15) {
+            const digits = mantissa.replace('.', '');
+            const prefixDigits = digits.padEnd(16, '0').substring(0, 16);
+            const suffix = "000";
+            const totalDigits = exp + 1;
+            const hiddenCount = totalDigits - prefixDigits.length - suffix.length;
+
+            if (hiddenCount > 0) {
+                const formattedPrefix = new Intl.NumberFormat('en-US').format(BigInt(prefixDigits));
+                return `${value < 0 ? '-' : ''}${formattedPrefix} ... ${hiddenCount} ... ${suffix}`;
+            }
+        }
+
+        // Fallback for large numbers that don't need compression
+        return new Intl.NumberFormat('en-US').format(value);
     }
 
     // For values >= 0.01, format to 2 decimal places with grouping (commas).
@@ -40,14 +58,10 @@ export const smartFormatNumber = (value: number): string => {
         return '0.00';
     }
 
-    // If the number is extremely small beyond reasonable precision, use scientific notation
-    if (firstNonZeroIndex > 8) {
-        return value.toExponential(2);
-    }
-
     // Determine the number of decimal places to show. We want to show the first 
     // non-zero digit and the one following it for context.
-    const precision = firstNonZeroIndex + 2;
+    // Cap at 20 as it is the standard maximum for Intl.NumberFormat.
+    const precision = Math.min(firstNonZeroIndex + 2, 20);
 
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: precision,

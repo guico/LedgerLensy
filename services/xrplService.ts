@@ -267,6 +267,27 @@ const processTxItem = (item: any, perspectiveAddress: string): ProcessedTransact
         }
     }
 
+    // Filter out the fee from the balance changes if the perspective address is the sender.
+    // This prevents the fee from showing up in the Debit/Credit columns, as it has its own column.
+    if (tx.Account === perspectiveAddress && tx.Fee) {
+        const feeVal = Number(tx.Fee) / DROPS_PER_XRP;
+        const xrpChangeIndex = balanceChanges.findIndex(c => c.currency === 'XRP');
+
+        if (xrpChangeIndex !== -1) {
+            const currentVal = parseFloat(balanceChanges[xrpChangeIndex].value);
+            // Add the fee back (since it was a debit/negative value) to get the actual transfer amount
+            const adjustedVal = currentVal + feeVal;
+
+            // If the value is effectively zero (only fee was paid), remove the entry
+            if (Math.abs(adjustedVal) < 1e-9) {
+                balanceChanges.splice(xrpChangeIndex, 1);
+            } else {
+                // Otherwise update with the non-fee amount
+                balanceChanges[xrpChangeIndex].value = adjustedVal.toString();
+            }
+        }
+    }
+
     let details = `Type: ${tx.TransactionType}`; // Fallback details
     let detailsKey = 'details_fallback';
     let detailsParams: Record<string, string | number> = { type: tx.TransactionType };

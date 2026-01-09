@@ -1,6 +1,7 @@
 import React from 'react';
 import type { AccountInfo, Prices } from '../types';
 import { getFullNumberString, smartFormatNumber, formatUSD } from '../utils/formatUtils';
+import { SmartNumber } from './SmartNumber';
 import { knownAddressesCache } from '../services/knownAddresses';
 
 interface AccountSummaryProps {
@@ -42,7 +43,7 @@ export const AccountSummary: React.FC<AccountSummaryProps> = ({ accountInfo, pri
         <p className="text-2xl font-bold text-xrp-blue">
           <span className="text-lg mr-2 font-medium text-gray-800 dark:text-gray-300">{balance.currency}</span>
           <span title={`${t('fullValue')}: ${fullValueFormatted}`}>
-            {isXRP ? value.toFixed(6) : smartFormatNumber(displayValue)}
+            {isXRP ? value.toFixed(6) : <SmartNumber value={displayValue} />}
           </span>
         </p>
         <p className="text-sm text-green-600 dark:text-green-400">
